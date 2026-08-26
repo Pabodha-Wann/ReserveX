@@ -8,12 +8,23 @@ const api = axios.create({
     },
 });
 
+let getAccessToken = null;
+
+// Call this from AuthContext when the app loads
+export const setTokenProvider = (provider) => {
+    getAccessToken = provider;
+};
+
 // Add a request interceptor to attach the JWT token
 api.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
+    async (config) => {
+        if (getAccessToken) {
+            try {
+                const token = await getAccessToken();
+                config.headers.Authorization = `Bearer ${token}`;
+            } catch (error) {
+                console.error('Error fetching Auth0 token for API request', error);
+            }
         }
         return config;
     },
@@ -22,5 +33,4 @@ api.interceptors.request.use(
     }
 );
 
-// THIS WAS MISSING: The default export
 export default api;

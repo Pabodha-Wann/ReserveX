@@ -1,59 +1,50 @@
 import React, { createContext, useState, useEffect } from 'react';
-import api from '../services/api';
-import { jwtDecode } from "jwt-decode";
+import { useAuth0 } from '@auth0/auth0-react';
+import { setTokenProvider } from '../services/api';
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+    const { 
+        user: auth0User, 
+        isAuthenticated, 
+        isLoading: auth0Loading, 
+        loginWithRedirect, 
+        logout: auth0Logout,
+        getAccessTokenSilently
+    } = useAuth0();
+
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    const logout = () => {
-        localStorage.removeItem('token');
-        setUser(null);
-    };
-
     useEffect(() => {
-        // Check for existing token on page load to keep user logged in
-        const token = localStorage.getItem('token');
-        if (token) {
-            try {
-                const decoded = jwtDecode(token);
-                // Check if token is expired
-                if (decoded.exp * 1000 < Date.now()) {
-                    localStorage.removeItem('token');
-                    setUser(null);
-                } else {
-                    setUser(decoded);
-                }
-            } catch (error) {
-                console.error('Token decode error:', error);
-                localStorage.removeItem('token');
+        // Provide the token fetcher to api.js so it can attach Bearer tokens
+        setTokenProvider(getAccessTokenSilently);
+
+        const initUser = async () => {
+            if (auth0Loading) return;
+            
+            if (isAuthenticated && auth0User) {
+                // Map Auth0 user to what your app expects
+                setUser({
+                    ...auth0User,
+                    email: auth0User.email,
+                    role: auth0User['https://api.reservex.com/roles']?.[0] || 'EXHIBITION_ORGANIZER'
+                });
+            } else {
                 setUser(null);
             }
-        }
-        setLoading(false);
-    }, []);
+            setLoading(false);
+        };
+        initUser();
+    }, [isAuthenticated, auth0Loading, auth0User, getAccessTokenSilently]);
 
-    const login = async (email, password) => {
-        try {
-            // Adjust this URL if your backend login endpoint is different
-            const response = await api.post('/auth/login', { email, password });
-            
-            // Assuming your backend returns { "token": "..." }
-            const { token } = response.data; 
+    const login = async () => {
+        await loginWithRedirect();
+    };
 
-            if (token) {
-                localStorage.setItem('token', token);
-                const decoded = jwtDecode(token);
-                setUser(decoded);
-                return true;
-            }
-            return false;
-        } catch (error) {
-            console.error("Login failed:", error);
-            return false;
-        }
+    const logout = () => {
+        auth0Logout({ logoutParams: { returnTo: window.location.origin } });
     };
 
     return (
