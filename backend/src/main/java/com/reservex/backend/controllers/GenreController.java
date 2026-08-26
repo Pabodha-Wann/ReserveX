@@ -3,13 +3,14 @@
 
 package com.reservex.backend.controllers;
 
-import com.reservex.backend.config.UserPrincipal;
 import com.reservex.backend.dto.StallGenreRequest;
 import com.reservex.backend.entity.ReservationGenre;
 import com.reservex.backend.services.ReservationGenreService;
+import com.reservex.backend.services.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,10 +22,12 @@ import java.util.Map;
 public class GenreController {
 
     private final ReservationGenreService genreService;
+    private final UserService userService;
 
     @GetMapping
-    public ResponseEntity<List<String>> getMyGenres(@AuthenticationPrincipal UserPrincipal principal) {
-        return ResponseEntity.ok(genreService.getGenresByUser(principal.getId()));
+    public ResponseEntity<List<String>> getMyGenres(@AuthenticationPrincipal Jwt jwt) {
+        Integer userId = userService.getUserIdByEmail(jwt.getClaimAsString("email"));
+        return ResponseEntity.ok(genreService.getGenresByUser(userId));
     }
 
 //    @PostMapping
@@ -41,9 +44,10 @@ public class GenreController {
 
     @PutMapping
     public ResponseEntity<?> setGenres(
-            @AuthenticationPrincipal UserPrincipal principal,
+            @AuthenticationPrincipal Jwt jwt,
             @RequestBody List<StallGenreRequest> genreNames) {
-        genreService.setGenresPerStall(principal.getId(), genreNames);
+        Integer userId = userService.getUserIdByEmail(jwt.getClaimAsString("email"));
+        genreService.setGenresPerStall(userId, genreNames);
         return ResponseEntity.ok(Map.of("message", "Genres updated"));
     }
 }

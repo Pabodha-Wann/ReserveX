@@ -21,7 +21,10 @@ public class User {
     @Column(name = "user_id")
     private Integer id;
 
-    @Column(name = "business_name", nullable = false)
+    @Column(name = "auth0_sub", nullable = false, unique = true)
+    private String auth0Sub;
+
+    @Column(name = "business_name")
     private String businessName;
 
     @Column(nullable = false, unique = true)
@@ -30,9 +33,7 @@ public class User {
     @Column(nullable = false, unique = true)
     private String username;
 
-    @Column(nullable = false)
-    private String password;
-
+    @Builder.Default
     @Column(name = "no_of_current_bookings", nullable = false)
     private int noOfCurrentBookings = 0;
 
@@ -46,6 +47,7 @@ public class User {
     @Column(name = "last_updated_at", nullable = false)
     private Instant lastUpdatedAt;
 
+    @Builder.Default
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Reservation> reservations = new ArrayList<>();
 

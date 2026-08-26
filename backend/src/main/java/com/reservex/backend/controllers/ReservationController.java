@@ -4,14 +4,15 @@
 
 package com.reservex.backend.controllers;
 
-import com.reservex.backend.config.UserPrincipal;
 import com.reservex.backend.dto.ReservationDto;
 import com.reservex.backend.services.ReservationGenreService;
 import com.reservex.backend.services.ReservationService;
+import com.reservex.backend.services.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,10 +25,13 @@ public class ReservationController {
 
     private final ReservationService reservationService;
     private final ReservationGenreService genreService;
+    private final UserService userService;
+    
     @PostMapping
     public ResponseEntity<?> createReservation(
-            @AuthenticationPrincipal UserPrincipal principal,
+            @AuthenticationPrincipal Jwt jwt,
             @RequestBody Map<String, Object> body) {
+        Integer userId = userService.getUserIdByEmail(jwt.getClaimAsString("email"));
         try {
             if (body.get("stallIds") != null || body.get("stall_ids") != null) {
                 @SuppressWarnings("unchecked")
@@ -35,7 +39,7 @@ public class ReservationController {
                 List<Integer> stallIds = rawList.stream()
                         .map(id -> id instanceof Number n ? n.intValue() : Integer.parseInt(id.toString()))
                         .toList();
-                List<ReservationDto> dtos = reservationService.createReservations(principal.getId(), stallIds);
+                List<ReservationDto> dtos = reservationService.createReservations(userId, stallIds);
                 return ResponseEntity.status(HttpStatus.CREATED).body(dtos);
             }
             Object stallIdObj = body.get("stallId");
@@ -43,7 +47,7 @@ public class ReservationController {
                 return ResponseEntity.badRequest().body(Map.of("message", "stallId or stallIds is required"));
             }
             Integer stallId = stallIdObj instanceof Number n ? n.intValue() : Integer.parseInt(stallIdObj.toString());
-            ReservationDto dto = reservationService.createReservation(principal.getId(), stallId);
+            ReservationDto dto = reservationService.createReservation(userId, stallId);
             return ResponseEntity.status(HttpStatus.CREATED).body(dto);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
@@ -51,8 +55,9 @@ public class ReservationController {
     }
 
     @GetMapping("/my")
-    public ResponseEntity<List<ReservationDto>> getMyReservations(@AuthenticationPrincipal UserPrincipal principal) {
-        return ResponseEntity.ok(reservationService.getMyReservations(principal.getId()));
+    public ResponseEntity<List<ReservationDto>> getMyReservations(@AuthenticationPrincipal Jwt jwt) {
+        Integer userId = userService.getUserIdByEmail(jwt.getClaimAsString("email"));
+        return ResponseEntity.ok(reservationService.getMyReservations(userId));
     }
 
 }
