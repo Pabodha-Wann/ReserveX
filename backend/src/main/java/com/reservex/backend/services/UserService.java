@@ -24,10 +24,17 @@ public class UserService {
 
         User user = userRepository.findByAuth0Sub(sub)
                 .orElseGet(() -> {
+                    // Read the email from the custom claim you added in Auth0 Actions
+                    String email = jwt.getClaimAsString("https://api.reservex.com/email");
+                    
+                    if (email == null) {
+                        throw new IllegalArgumentException("Email is missing from the authentication token. Please verify your Auth0 Action.");
+                    }
+
                     User newUser = User.builder()
                             .auth0Sub(sub)
-                            .email(jwt.getClaimAsString("email"))
-                            .username(jwt.getClaimAsString("email"))
+                            .email(email)
+                            .username(email) // Using email as username
                             .role(resolveRole(jwt))
                             .build();
                     return userRepository.save(newUser);
@@ -51,8 +58,8 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public Integer getUserIdByEmail(String email) {
-        return userRepository.findByEmail(email)
+    public Integer getUserIdByAuth0Sub(String sub) {
+        return userRepository.findByAuth0Sub(sub)
                 .map(User::getId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found or not synced yet"));
     }

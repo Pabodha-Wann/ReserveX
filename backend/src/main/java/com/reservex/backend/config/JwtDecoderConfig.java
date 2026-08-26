@@ -20,17 +20,21 @@ public class JwtDecoderConfig {
 
     @Bean
     public JwtDecoder jwtDecoder() {
-        NimbusJwtDecoder decoder = JwtDecoders.fromIssuerLocation(issuer);
+        // Strip trailing slash if present to safely build the JWKS URI
+        String baseUrl = issuer.endsWith("/") ? issuer.substring(0, issuer.length() - 1) : issuer;
+        String jwkSetUri = baseUrl + "/.well-known/jwks.json";
 
-        OAuth2TokenValidator<Jwt> audienceValidator = jwt->
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
+
+        OAuth2TokenValidator<Jwt> audienceValidator = jwt ->
                 jwt.getAudience().contains(audience)
-                ? OAuth2TokenValidatorResult.success()
+                        ? OAuth2TokenValidatorResult.success()
                         : OAuth2TokenValidatorResult.failure(
                                 new OAuth2Error("invalid_token", "The audience value is invalid.", null)
-                );
+                        );
 
         OAuth2TokenValidator<Jwt> withIssuer = JwtValidators.createDefaultWithIssuer(issuer);
-        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(withIssuer,audienceValidator));
+        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(withIssuer, audienceValidator));
 
         return decoder;
     }

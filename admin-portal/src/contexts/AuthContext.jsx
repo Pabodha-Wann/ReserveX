@@ -25,11 +25,23 @@ export const AuthProvider = ({ children }) => {
             if (auth0Loading) return;
             
             if (isAuthenticated && auth0User) {
-                // Map Auth0 user to what your app expects
+                // Read roles directly from the Auth0 token
+                const roles = auth0User['https://api.reservex.com/roles'] || [];
+                const role = roles[0] || 'VENDOR';
+                
+                if (role !== 'Exhibition Organizer' && role !== 'EMPLOYEE') {
+                    // Unauthorized: User is not an admin
+                    alert("Access Denied: You must be an Exhibition Organizer to access the Admin Workspace.");
+                    auth0Logout({ logoutParams: { returnTo: window.location.origin } });
+                    return;
+                }
+
+                // Authorized
                 setUser({
-                    ...auth0User,
+                    id: auth0User.sub,
                     email: auth0User.email,
-                    role: auth0User['https://api.reservex.com/roles']?.[0] || 'EXHIBITION_ORGANIZER'
+                    name: auth0User.name,
+                    role: 'EMPLOYEE'
                 });
             } else {
                 setUser(null);
@@ -37,7 +49,7 @@ export const AuthProvider = ({ children }) => {
             setLoading(false);
         };
         initUser();
-    }, [isAuthenticated, auth0Loading, auth0User, getAccessTokenSilently]);
+    }, [isAuthenticated, auth0Loading, auth0User, getAccessTokenSilently, auth0Logout]);
 
     const login = async () => {
         await loginWithRedirect();

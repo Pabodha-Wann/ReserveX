@@ -1,204 +1,178 @@
-import React, { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useContext } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 
 const Login = () => {
-    // State to hold user input
-    const [credentials, setCredentials] = useState({ email: '', password: '' });
-    
-    // State to handle UI feedback (errors and loading spinner)
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
-
-    // Hooks for navigation and accessing the global auth state
     const { login } = useContext(AuthContext);
-    const navigate = useNavigate();
 
-    // Update state when user types
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setCredentials(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    };
-
-    // Handle the form submission
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError('');      // Clear previous errors
-        setLoading(true);  // Disable button while processing
-
-        try {
-            // Call the login function from AuthContext
-            const success = await login(credentials.email, credentials.password);
-            
-            if (success) {
-                // Redirect to the Dashboard on success
-                navigate('/dashboard');
-            } else {
-                setError('Invalid email or password.');
-            }
-        } catch (err) {
-            console.error('Login error:', err);
-            setError('Server error. Please try again later.');
-        } finally {
-            setLoading(false); // Re-enable button
-        }
+    const handleLoginClick = () => {
+        login();
     };
 
     return (
         <div style={styles.container}>
-            <div style={styles.card}>
-                <div style={styles.headerContainer}>
-                    <img 
-                        src="/logo.jpeg" 
-                        alt="Logo" 
-                        style={styles.logo}
-                    />
-                    <div>
-                        <h2 style={styles.title}>Admin Portal</h2>
-                        <p style={styles.subtitle}>Colombo International Bookfair</p>
+            {/* Left Side: Image Background */}
+            <div style={styles.leftPane}>
+                <div style={styles.overlay}></div>
+                <div style={styles.leftContent}>
+                    <h1 style={styles.heroTitle}>Admin Workspace</h1>
+                    <p style={styles.heroSubtitle}>
+                        Colombo International Bookfair Management System. 
+                        Secure access to vendor applications, stall allocations, and event monitoring.
+                    </p>
+                </div>
+            </div>
+
+            {/* Right Side: Login Panel */}
+            <div style={styles.rightPane}>
+                <div style={styles.card}>
+                    <div style={styles.headerContainer}>
+                        <img 
+                            src="/logo.jpeg" 
+                            alt="Logo" 
+                            style={styles.logo}
+                            onError={(e) => e.target.style.display = 'none'} // Hide if logo missing
+                        />
+                        <div>
+                            <h2 style={styles.title}>Welcome Back</h2>
+                            <p style={styles.subtitle}>Secure Enterprise Authentication</p>
+                        </div>
+                    </div>
+                    
+                    <button 
+                        onClick={handleLoginClick}
+                        style={styles.button}
+                        onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                        onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                    >
+                        <span style={styles.buttonIcon}>🔒</span> Sign In with Auth0
+                    </button>
+
+                    <div style={styles.footerText}>
+                        AUTHORIZED PERSONNEL ONLY<br/>
+                        Protected by OAuth2 & OIDC
                     </div>
                 </div>
-                
-                {/* Error Message Display */}
-                {error && <div style={styles.error}>{error}</div>}
-
-                <form onSubmit={handleSubmit} style={styles.form}>
-                    <div style={styles.inputGroup}>
-                        <label style={styles.label}>Email Address</label>
-                        <input
-                            type="email"
-                            name="email"
-                            value={credentials.email}
-                            onChange={handleChange}
-                            style={styles.input}
-                            required
-                            placeholder="admin@example.com"
-                        />
-                    </div>
-
-                    <div style={styles.inputGroup}>
-                        <label style={styles.label}>Password</label>
-                        <input
-                            type="password"
-                            name="password"
-                            value={credentials.password}
-                            onChange={handleChange}
-                            style={styles.input}
-                            required
-                            placeholder="Enter password"
-                        />
-                    </div>
-
-                    <button 
-                        type="submit" 
-                        style={loading ? styles.buttonDisabled : styles.button}
-                        disabled={loading}
-                    >
-                        {loading ? 'Logging in...' : 'Login'}
-                    </button>
-                </form>
             </div>
         </div>
     );
 };
 
-// Internal CSS styles for a clean look without external files
+// Modern, inline CSS styles
 const styles = {
     container: {
         display: 'flex',
+        height: '100vh',
+        width: '100%',
+        fontFamily: "'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+        backgroundColor: '#ffffff',
+    },
+    leftPane: {
+        flex: 1,
+        position: 'relative',
+        backgroundImage: 'url("https://images.unsplash.com/photo-1497366216548-37526070297c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        padding: '60px',
+    },
+    overlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(15, 23, 42, 0.7)', // Dark slate overlay
+        zIndex: 1,
+    },
+    leftContent: {
+        position: 'relative',
+        zIndex: 2,
+        color: '#ffffff',
+        maxWidth: '500px',
+    },
+    heroTitle: {
+        fontSize: '48px',
+        fontWeight: '800',
+        marginBottom: '20px',
+        lineHeight: '1.2',
+    },
+    heroSubtitle: {
+        fontSize: '18px',
+        lineHeight: '1.6',
+        color: '#e2e8f0',
+    },
+    rightPane: {
+        flex: 1,
+        display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        height: '100vh',
-        backgroundColor: '#f0f2f5',
-        fontFamily: 'Arial, sans-serif',
+        backgroundColor: '#f8fafc',
     },
     card: {
         width: '100%',
-        maxWidth: '400px',
-        padding: '40px',
-        backgroundColor: '#fff',
-        borderRadius: '8px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        maxWidth: '420px',
+        padding: '50px 40px',
+        backgroundColor: '#ffffff',
+        borderRadius: '16px',
+        boxShadow: '0 10px 25px rgba(0,0,0,0.05)',
         textAlign: 'center',
+        border: '1px solid #f1f5f9',
     },
     headerContainer: {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: '15px',
-        marginBottom: '25px',
+        gap: '20px',
+        marginBottom: '40px',
     },
     logo: {
-        height: '50px',
+        height: '64px',
         width: 'auto',
         objectFit: 'contain',
+        borderRadius: '8px',
     },
     title: {
-        margin: '0 0 5px 0',
-        color: '#333',
+        margin: '0 0 8px 0',
+        color: '#0f172a',
+        fontSize: '28px',
+        fontWeight: '700',
     },
     subtitle: {
-        margin: '0 0 25px 0',
-        color: '#666',
-        fontSize: '14px',
-    },
-    form: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '20px',
-    },
-    inputGroup: {
-        textAlign: 'left',
-    },
-    label: {
-        display: 'block',
-        marginBottom: '8px',
-        fontSize: '14px',
-        color: '#333',
-        fontWeight: 'bold',
-    },
-    input: {
-        width: '100%',
-        padding: '12px',
-        borderRadius: '4px',
-        border: '1px solid #ccc',
-        fontSize: '16px',
-        boxSizing: 'border-box',
+        margin: 0,
+        color: '#64748b',
+        fontSize: '15px',
     },
     button: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '12px',
         width: '100%',
-        padding: '12px',
-        backgroundColor: '#007bff',
+        padding: '16px',
+        backgroundColor: '#2563eb', // Modern blue
         color: 'white',
         border: 'none',
-        borderRadius: '4px',
+        borderRadius: '12px',
         fontSize: '16px',
+        fontWeight: '600',
         cursor: 'pointer',
-        transition: 'background 0.3s',
-        fontWeight: 'bold',
+        transition: 'all 0.2s ease',
+        boxShadow: '0 4px 6px rgba(37, 99, 235, 0.2)',
     },
-    buttonDisabled: {
-        width: '100%',
-        padding: '12px',
-        backgroundColor: '#cccccc',
-        color: '#666666',
-        border: 'none',
-        borderRadius: '4px',
-        fontSize: '16px',
-        cursor: 'not-allowed',
-        fontWeight: 'bold',
+    buttonIcon: {
+        fontSize: '18px',
     },
-    error: {
-        backgroundColor: '#ffebee',
-        color: '#c62828',
-        padding: '10px',
-        borderRadius: '4px',
-        marginBottom: '20px',
-        fontSize: '14px',
-        border: '1px solid #ef9a9a'
+    footerText: {
+        marginTop: '40px',
+        fontSize: '12px',
+        color: '#94a3b8',
+        lineHeight: '1.6',
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em',
+        borderTop: '1px solid #e2e8f0',
+        paddingTop: '20px',
     }
 };
 

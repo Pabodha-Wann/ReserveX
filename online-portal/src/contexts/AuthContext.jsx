@@ -50,6 +50,14 @@ export const AuthProvider = ({ children }) => {
     const refreshUser = async () => {
         try {
             const userData = await getCurrentUser();
+            
+            // Check if the user is authorized for the vendor portal
+            if (userData.role !== 'VENDOR' && userData.role !== 'Stall Vendor') {
+                alert("Access Denied: This portal is for Stall Vendors only. Organizers should use the Admin Workspace.");
+                logout();
+                return;
+            }
+
             const updatedUser = {
                 ...userData,
                 noOfCurrentBookings: userData.noOfCurrentBookings ?? 0

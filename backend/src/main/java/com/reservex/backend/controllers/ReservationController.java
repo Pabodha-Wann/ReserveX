@@ -11,6 +11,7 @@ import com.reservex.backend.services.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
@@ -27,11 +28,12 @@ public class ReservationController {
     private final ReservationGenreService genreService;
     private final UserService userService;
     
+    @PreAuthorize("hasRole('VENDOR')")
     @PostMapping
     public ResponseEntity<?> createReservation(
             @AuthenticationPrincipal Jwt jwt,
             @RequestBody Map<String, Object> body) {
-        Integer userId = userService.getUserIdByEmail(jwt.getClaimAsString("email"));
+        Integer userId = userService.getUserIdByAuth0Sub(jwt.getSubject());
         try {
             if (body.get("stallIds") != null || body.get("stall_ids") != null) {
                 @SuppressWarnings("unchecked")
@@ -54,9 +56,10 @@ public class ReservationController {
         }
     }
 
+    @PreAuthorize("hasRole('VENDOR')")
     @GetMapping("/my")
     public ResponseEntity<List<ReservationDto>> getMyReservations(@AuthenticationPrincipal Jwt jwt) {
-        Integer userId = userService.getUserIdByEmail(jwt.getClaimAsString("email"));
+        Integer userId = userService.getUserIdByAuth0Sub(jwt.getSubject());
         return ResponseEntity.ok(reservationService.getMyReservations(userId));
     }
 

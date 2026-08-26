@@ -22,9 +22,13 @@ public class Auth0RolesConverter implements Converter<Jwt, AbstractAuthenticatio
 
     public AbstractAuthenticationToken convert(Jwt jwt) {
         List<String> roles = jwt.getClaimAsStringList(ROLES_CLAIM);
-        Collection<GrantedAuthority> authorities = roles == null
-                ? List.of()
-                : roles.stream()
+        
+        // If roles are empty or null, fallback to VENDOR
+        if (roles == null || roles.isEmpty()) {
+            roles = List.of("Stall Vendor");
+        }
+
+        Collection<GrantedAuthority> authorities = roles.stream()
                 .map(r -> ROLE_MAP.getOrDefault(r, r))
                 .map(r -> new SimpleGrantedAuthority("ROLE_" + r))
                 .collect(Collectors.toList());
