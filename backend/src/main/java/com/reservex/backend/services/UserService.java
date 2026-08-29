@@ -26,9 +26,10 @@ public class UserService {
                 .orElseGet(() -> {
                     // Read the email from the custom claim you added in Auth0 Actions
                     String email = jwt.getClaimAsString("https://api.reservex.com/email");
-                    
+
                     if (email == null) {
-                        throw new IllegalArgumentException("Email is missing from the authentication token. Please verify your Auth0 Action.");
+                        throw new IllegalArgumentException(
+                                "Email is missing from the authentication token. Please verify your Auth0 Action.");
                     }
 
                     User newUser = User.builder()
@@ -65,10 +66,14 @@ public class UserService {
     }
 
     private User.Role resolveRole(Jwt jwt) {
+        // extracts the custom roles claim from the Auth0 token
         List<String> roles = jwt.getClaimAsStringList("https://api.reservex.com/roles");
+
+        // if Auth0 says it is organizer assign as EMPLOYEE
         if (roles != null && roles.contains("Exhibition Organizer")) {
             return User.Role.EMPLOYEE;
         }
+        // if not VENDOR
         return User.Role.VENDOR;
     }
 }

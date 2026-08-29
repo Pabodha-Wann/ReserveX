@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { setTokenProvider } from '../services/api';
+import AccessDenied from '../components/AccessDenied';
 
 export const AuthContext = createContext();
 
@@ -16,6 +17,7 @@ export const AuthProvider = ({ children }) => {
 
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [accessError, setAccessError] = useState(null);
 
     useEffect(() => {
         // Provide the token fetcher to api.js so it can attach Bearer tokens
@@ -31,8 +33,8 @@ export const AuthProvider = ({ children }) => {
                 
                 if (role !== 'Exhibition Organizer' && role !== 'EMPLOYEE') {
                     // Unauthorized: User is not an admin
-                    alert("Access Denied: You must be an Exhibition Organizer to access the Admin Workspace.");
-                    auth0Logout({ logoutParams: { returnTo: window.location.origin } });
+                    setAccessError("You must be an Exhibition Organizer to access the Admin Workspace.");
+                    setLoading(false);
                     return;
                 }
 
@@ -58,6 +60,10 @@ export const AuthProvider = ({ children }) => {
     const logout = () => {
         auth0Logout({ logoutParams: { returnTo: window.location.origin } });
     };
+
+    if (accessError) {
+        return <AccessDenied message={accessError} logout={logout} />;
+    }
 
     return (
         <AuthContext.Provider value={{ user, login, logout, loading }}>

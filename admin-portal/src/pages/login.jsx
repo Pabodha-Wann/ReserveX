@@ -1,8 +1,17 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
-    const { login } = useContext(AuthContext);
+    const { login, user } = useContext(AuthContext);
+    const navigate = useNavigate();
+
+    // Redirect to dashboard immediately if already logged in
+    useEffect(() => {
+        if (user) {
+            navigate('/dashboard');
+        }
+    }, [user, navigate]);
 
     const handleLoginClick = () => {
         login();
