@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import './AccessDenied.css';
 
 const AccessDenied = ({ message, logout }) => {
     const [countdown, setCountdown] = useState(5);

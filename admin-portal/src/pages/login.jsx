@@ -25,7 +25,7 @@ const Login = () => {
                 <div style={styles.leftContent}>
                     <h1 style={styles.heroTitle}>Admin Workspace</h1>
                     <p style={styles.heroSubtitle}>
-                        Colombo International Bookfair Management System. 
+                        Colombo International Bookfair Management System.
                         Secure access to vendor applications, stall allocations, and event monitoring.
                     </p>
                 </div>
@@ -35,9 +35,9 @@ const Login = () => {
             <div style={styles.rightPane}>
                 <div style={styles.card}>
                     <div style={styles.headerContainer}>
-                        <img 
-                            src="/logo.jpeg" 
-                            alt="Logo" 
+                        <img
+                            src="/logo.jpeg"
+                            alt="Logo"
                             style={styles.logo}
                             onError={(e) => e.target.style.display = 'none'} // Hide if logo missing
                         />
@@ -46,8 +46,8 @@ const Login = () => {
                             <p style={styles.subtitle}>Secure Enterprise Authentication</p>
                         </div>
                     </div>
-                    
-                    <button 
+
+                    <button
                         onClick={handleLoginClick}
                         style={styles.button}
                         onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
@@ -57,7 +57,7 @@ const Login = () => {
                     </button>
 
                     <div style={styles.footerText}>
-                        AUTHORIZED PERSONNEL ONLY<br/>
+                        AUTHORIZED PERSONNEL ONLY<br />
                         Protected by OAuth2 & OIDC
                     </div>
                 </div>
