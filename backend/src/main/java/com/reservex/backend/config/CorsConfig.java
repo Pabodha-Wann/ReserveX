@@ -23,11 +23,11 @@ public class CorsConfig {
         
         // Allow frontend origins
         configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:5173",      // Vite default port (admin-portal, online-portal)
-                "http://localhost:5174",      // Alternative Vite port
-                "http://localhost:3000",      // React default port (my-react-app)
-                "http://localhost:3001",      // Alternative React port
-                "http://localhost:8080"       // Backend testing
+                "https://localhost:5173",      // Vite default port (admin-portal, online-portal)
+                "https://localhost:5174",      // Alternative Vite port
+                "https://localhost:3000",      // React default port (my-react-app)
+                "https://localhost:3001",      // Alternative React port
+                "https://localhost:8080"       // Backend testing
         ));
         
         // Allow credentials (cookies, authorization headers)

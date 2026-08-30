@@ -1,11 +1,9 @@
+import axios from "axios"; // for sending HTTP requests
 
-import axios from "axios";// for sending HTTP requests
-
-const BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://localhost:8443/api";
 
 const api = axios.create({
-  baseURL: BASE_URL,// custom instance of axios with a base URL
+  baseURL: BASE_URL, // custom instance of axios with a base URL
   headers: {
     "Content-Type": "application/json",
   },
@@ -32,4 +30,5 @@ api.interceptors.request.use(async (config) => { // interceptor to add the JWT t
   }
   return config;
 });
+
 export default api;
