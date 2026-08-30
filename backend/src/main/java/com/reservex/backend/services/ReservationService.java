@@ -11,6 +11,7 @@ import com.reservex.backend.entity.User;
 import com.reservex.backend.repositories.ReservationRepository;
 import com.reservex.backend.repositories.StallRepository;
 import com.reservex.backend.repositories.UserRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,7 @@ public class ReservationService {
     private final StallRepository stallRepository;
     private final UserRepository userRepository;
     private final EmailService emailService;
+    private final EntityManager entityManager;
 
     /**
      * Convenience method for reserving a single stall.
@@ -52,21 +54,27 @@ public class ReservationService {
             throw new IllegalArgumentException("At least one stall is required");
         }
 
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdWithPessimisticLock(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        System.out.println(">>> Starting createReservations for user: " + user.getEmail() + " with stallIds: " + stallIds);
+        // Force Hibernate to clear the L1 cache for this entity and load the absolute latest row from the DB
+        entityManager.refresh(user);
+
+        System.out.println(
+                ">>> Starting createReservations for user: " + user.getEmail() + " with stallIds: " + stallIds);
 
         // Filter and load stalls that are not already reserved
         var stallsToBook = new HashSet<Stall>();
         for (Integer stallId : stallIds) {
             if (stallId == null)
                 continue;
-            if (reservationRepository.existsByStalls_Id(stallId)) {
-                System.out.println(">>> Stall ID " + stallId + " is already reserved, skipping.");
-                continue; // already reserved, skip
-            }
-            stallRepository.findById(stallId).ifPresent(stall -> {
+
+            // We must acquire the lock FIRST, then check if it's already reserved
+            stallRepository.findByIdWithPessimisticLock(stallId).ifPresent(stall -> {
+                if (stall.getIsConfirmed() || reservationRepository.existsByStalls_Id(stallId)) {
+                    System.out.println(">>> Stall ID " + stallId + " is already reserved, failing transaction.");
+                    throw new IllegalArgumentException("Stall " + stall.getName() + " was just reserved by someone else. Please review your selection.");
+                }
                 stallsToBook.add(stall);
                 System.out.println(">>> Found stall to book: " + stall.getName());
             });
@@ -79,7 +87,7 @@ public class ReservationService {
         int currentBookings = user.getNoOfCurrentBookings();
         int newBookings = stallsToBook.size();
         System.out.println(">>> Current bookings: " + currentBookings + ", new bookings to add: " + newBookings);
-        
+
         if (currentBookings + newBookings > MAX_STALLS_PER_USER) {
             throw new IllegalArgumentException("Maximum 3 stalls per business allowed. " +
                     "You already have " + currentBookings + " booked.");
@@ -119,7 +127,7 @@ public class ReservationService {
         reservationRepository.flush();
         stallRepository.flush();
         System.out.println(">>> Flushed data to database");
-        
+
         // Send email with reservation details
         emailService.sendReservationConfirmation(user, reservation);
         System.out.println(">>> Finished createReservations");
