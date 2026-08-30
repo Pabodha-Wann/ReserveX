@@ -1,0 +1,9 @@
+{
+  "sid": "SE2022055",
+  "name": "Pabodha",
+  "app-url": "https://localhost:5173",
+  "git": "https://github.com/Pabodha-Wann/ReserveX",
+  "blog": [
+    "https://medium.com/@pabodha726/securing-reservex-rebuilding-authentication-and-fixing-the-owasp-top-10-293822bf4364?sharedUserId=pabodha726"
+  ]
+}
