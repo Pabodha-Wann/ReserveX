@@ -55,15 +55,21 @@ public class ReservationService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
+        System.out.println(">>> Starting createReservations for user: " + user.getEmail() + " with stallIds: " + stallIds);
+
         // Filter and load stalls that are not already reserved
         var stallsToBook = new HashSet<Stall>();
         for (Integer stallId : stallIds) {
             if (stallId == null)
                 continue;
             if (reservationRepository.existsByStalls_Id(stallId)) {
+                System.out.println(">>> Stall ID " + stallId + " is already reserved, skipping.");
                 continue; // already reserved, skip
             }
-            stallRepository.findById(stallId).ifPresent(stallsToBook::add);
+            stallRepository.findById(stallId).ifPresent(stall -> {
+                stallsToBook.add(stall);
+                System.out.println(">>> Found stall to book: " + stall.getName());
+            });
         }
 
         if (stallsToBook.isEmpty()) {
@@ -72,6 +78,8 @@ public class ReservationService {
 
         int currentBookings = user.getNoOfCurrentBookings();
         int newBookings = stallsToBook.size();
+        System.out.println(">>> Current bookings: " + currentBookings + ", new bookings to add: " + newBookings);
+        
         if (currentBookings + newBookings > MAX_STALLS_PER_USER) {
             throw new IllegalArgumentException("Maximum 3 stalls per business allowed. " +
                     "You already have " + currentBookings + " booked.");
@@ -93,23 +101,28 @@ public class ReservationService {
         }
 
         reservation = reservationRepository.save(reservation);
+        System.out.println(">>> Saved reservation ID: " + reservation.getId());
 
         // Update cached count on user
         user.setNoOfCurrentBookings(currentBookings + newBookings);
         userRepository.save(user);
+        System.out.println(">>> Updated user booking count to: " + (currentBookings + newBookings));
 
         // Mark stalls as confirmed
         for (Stall stall : stallsToBook) {
             stall.setIsConfirmed(true);
             stallRepository.save(stall);
+            System.out.println(">>> Marked stall " + stall.getName() + " as confirmed and saved");
         }
 
         // Flush to ensure all data is persisted before sending email
         reservationRepository.flush();
         stallRepository.flush();
+        System.out.println(">>> Flushed data to database");
         
         // Send email with reservation details
         emailService.sendReservationConfirmation(user, reservation);
+        System.out.println(">>> Finished createReservations");
 
         List<ReservationDto> result = new ArrayList<>();
         result.add(ReservationDto.fromEntity(reservation));
