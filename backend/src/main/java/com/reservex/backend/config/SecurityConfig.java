@@ -24,8 +24,12 @@ public class SecurityConfig {
         @Bean
         public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
                 http.cors(cors -> cors.configurationSource(corsConfigurationSource))
-
                                 .csrf(csrf -> csrf.disable())
+                                .headers(headers -> headers
+                                                .frameOptions(frameOptions -> frameOptions.deny())
+                                                .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; frame-ancestors 'none';"))
+                                                .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000))
+                                )
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .authorizeHttpRequests((authorize) -> authorize
