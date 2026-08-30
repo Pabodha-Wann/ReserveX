@@ -11,11 +11,13 @@ import ProfilePage from "./pages/ProfilePage";
 import { Toaster } from 'react-hot-toast';
 import ProtectedRoute from "./routes/ProtectedRoute";
 import ScrollToTop from "./components/ScrollToTop";
+import BusinessNamePrompt from "./components/BusinessNamePrompt";
 
 function App() {
   return (
     <>
       <ScrollToTop />
+      <BusinessNamePrompt />
       <NavBar />
       <Toaster position="top-center" reverseOrder={false} containerStyle={{
         top: 90,

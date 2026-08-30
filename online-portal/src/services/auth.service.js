@@ -24,3 +24,13 @@ export const getCurrentUser = async () => {
     throw err?.response?.data?.message || "Failed to fetch user data";
   }
 };
+
+export const updateProfile = async (profileData) => {
+  try {
+    const res = await api.put("/users/me", profileData);
+    return res.data;
+  } catch (err) {
+    console.error("updateProfile error:", err);
+    throw err?.response?.data?.message || "Failed to update profile";
+  }
+};
