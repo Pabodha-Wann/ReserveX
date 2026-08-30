@@ -12,6 +12,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.HtmlUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -123,7 +124,9 @@ public class EmailService {
 
   private String buildStallDeletionBody(User user, String stallName, int currentBookings,
       boolean reservationCancelled) {
-    String reason = "The stall \"" + stallName + "\" has been removed from the exhibition by the administrator.";
+    String safeStallName = HtmlUtils.htmlEscape(stallName);
+    String safeBusinessName = HtmlUtils.htmlEscape(user.getBusinessName() != null ? user.getBusinessName() : "Vendor");
+    String reason = "The stall \"" + safeStallName + "\" has been removed from the exhibition by the administrator.";
     String statusMsg;
     String additionalInfo;
     
@@ -185,8 +188,8 @@ public class EmailService {
         </body>
         </html>
         """.formatted(
-        user.getBusinessName() != null ? user.getBusinessName() : "Vendor",
-        stallName,
+        safeBusinessName,
+        safeStallName,
         reason,
         statusMsg,
         additionalInfo);
@@ -194,7 +197,9 @@ public class EmailService {
 
   private String buildStallUnreserveBody(User user, String stallName, int currentBookings,
       boolean reservationCancelled) {
-    String reason = "The stall \"" + stallName + "\" has been unreserved by the administrator and is now available for other vendors.";
+    String safeStallName = HtmlUtils.htmlEscape(stallName);
+    String safeBusinessName = HtmlUtils.htmlEscape(user.getBusinessName() != null ? user.getBusinessName() : "Vendor");
+    String reason = "The stall \"" + safeStallName + "\" has been unreserved by the administrator and is now available for other vendors.";
     String statusMsg;
     String additionalInfo;
     
@@ -256,20 +261,21 @@ public class EmailService {
         </body>
         </html>
         """.formatted(
-        user.getBusinessName() != null ? user.getBusinessName() : "Vendor",
-        stallName,
+        safeBusinessName,
+        safeStallName,
         reason,
         statusMsg,
         additionalInfo);
   }
 
   private String buildConfirmationBody(User user, Reservation reservation) {
+    String safeBusinessName = HtmlUtils.htmlEscape(user.getBusinessName() != null ? user.getBusinessName() : "Vendor");
     // Build stall list
     StringBuilder stallList = new StringBuilder();
     reservation.getStalls().forEach(s -> stallList.append(
         "<li style=\"padding: 8px 0; border-bottom: 1px solid #f1f5f9; color: #334155; font-size: 15px;\">")
-        .append("<span style=\"font-weight: 600; color: #0f172a;\">").append(s.getName()).append("</span>")
-        .append(" <span style=\"color: #64748b; font-size: 13px;\">(").append(s.getSize()).append(")</span>")
+        .append("<span style=\"font-weight: 600; color: #0f172a;\">").append(HtmlUtils.htmlEscape(s.getName())).append("</span>")
+        .append(" <span style=\"color: #64748b; font-size: 13px;\">(").append(HtmlUtils.htmlEscape(s.getSize().name())).append(")</span>")
         .append("</li>"));
 
     return """
@@ -325,8 +331,8 @@ public class EmailService {
         </html>
         """
         .formatted(
-            user.getBusinessName() != null ? user.getBusinessName() : "Vendor",
-            user.getBusinessName() != null ? user.getBusinessName() : "N/A",
+            safeBusinessName,
+            safeBusinessName,
             stallList.toString(),
             reservation.getQrCodePath());
   }
