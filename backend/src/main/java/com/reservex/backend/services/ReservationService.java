@@ -13,6 +13,7 @@ import com.reservex.backend.repositories.StallRepository;
 import com.reservex.backend.repositories.UserRepository;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ReservationService {
 
     private static final int MAX_STALLS_PER_USER = 3;
@@ -60,7 +62,7 @@ public class ReservationService {
         // Force Hibernate to clear the L1 cache for this entity and load the absolute latest row from the DB
         entityManager.refresh(user);
 
-        System.out.println(
+        log.info(
                 ">>> Starting createReservations for user: " + user.getEmail() + " with stallIds: " + stallIds);
 
         // Filter and load stalls that are not already reserved
@@ -72,11 +74,11 @@ public class ReservationService {
             // We must acquire the lock FIRST, then check if it's already reserved
             stallRepository.findByIdWithPessimisticLock(stallId).ifPresent(stall -> {
                 if (stall.getIsConfirmed() || reservationRepository.existsByStalls_Id(stallId)) {
-                    System.out.println(">>> Stall ID " + stallId + " is already reserved, failing transaction.");
+                    log.info("Stall ID " + stallId + " is already reserved, failing transaction.");
                     throw new IllegalArgumentException("Stall " + stall.getName() + " was just reserved by someone else. Please review your selection.");
                 }
                 stallsToBook.add(stall);
-                System.out.println(">>> Found stall to book: " + stall.getName());
+                log.info("Found stall to book: " + stall.getName());
             });
         }
 
@@ -86,7 +88,7 @@ public class ReservationService {
 
         int currentBookings = user.getNoOfCurrentBookings();
         int newBookings = stallsToBook.size();
-        System.out.println(">>> Current bookings: " + currentBookings + ", new bookings to add: " + newBookings);
+        log.info("Current bookings: " + currentBookings + ", new bookings to add: " + newBookings);
 
         if (currentBookings + newBookings > MAX_STALLS_PER_USER) {
             throw new IllegalArgumentException("Maximum 3 stalls per business allowed. " +
@@ -109,28 +111,28 @@ public class ReservationService {
         }
 
         reservation = reservationRepository.save(reservation);
-        System.out.println(">>> Saved reservation ID: " + reservation.getId());
+        log.info("Saved reservation ID: " + reservation.getId());
 
         // Update cached count on user
         user.setNoOfCurrentBookings(currentBookings + newBookings);
         userRepository.save(user);
-        System.out.println(">>> Updated user booking count to: " + (currentBookings + newBookings));
+        log.info("Updated user booking count to: " + (currentBookings + newBookings));
 
         // Mark stalls as confirmed
         for (Stall stall : stallsToBook) {
             stall.setIsConfirmed(true);
             stallRepository.save(stall);
-            System.out.println(">>> Marked stall " + stall.getName() + " as confirmed and saved");
+            log.info("Marked stall " + stall.getName() + " as confirmed and saved");
         }
 
         // Flush to ensure all data is persisted before sending email
         reservationRepository.flush();
         stallRepository.flush();
-        System.out.println(">>> Flushed data to database");
+        log.info("Flushed data to database");
 
         // Send email with reservation details
         emailService.sendReservationConfirmation(user, reservation);
-        System.out.println(">>> Finished createReservations");
+        log.info("Finished createReservations");
 
         List<ReservationDto> result = new ArrayList<>();
         result.add(ReservationDto.fromEntity(reservation));

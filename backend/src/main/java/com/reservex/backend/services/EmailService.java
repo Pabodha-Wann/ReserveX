@@ -6,6 +6,7 @@ import com.reservex.backend.entity.User;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -16,6 +17,7 @@ import org.springframework.web.util.HtmlUtils;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class EmailService {
 
   private final JavaMailSender mailSender;
@@ -26,12 +28,12 @@ public class EmailService {
 
   public void sendReservationConfirmation(User user, Reservation reservation) {
     if (fromEmail == null || fromEmail.isBlank()) {
-      System.out.println(">>> Email not configured. Skipping email send.");
+      log.info("Email not configured. Skipping email send.");
       return; // skip if mail not configured
     }
 
     try {
-      System.out.println(">>> Generating QR code for reservation ID: " + reservation.getId());
+      log.info("Generating QR code for reservation ID: " + reservation.getId());
       
       // Ensure reservation ID is not null
       if (reservation.getId() == null) {
@@ -46,7 +48,7 @@ public class EmailService {
           user.getBusinessName() != null ? user.getBusinessName() : user.getUsername()
       );
       
-      System.out.println(">>> QR code generated successfully. Size: " + qrBytes.length + " bytes");
+      log.info("QR code generated successfully. Size: " + qrBytes.length + " bytes");
       
       MimeMessage message = mailSender.createMimeMessage();
       MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -69,9 +71,9 @@ public class EmailService {
       
       helper.addAttachment(qrFileName, qrResource, "image/png");
       
-      System.out.println(">>> Sending email to: " + user.getEmail() + " with QR attachment: " + qrFileName);
+      log.info("Sending email to: " + user.getEmail() + " with QR attachment: " + qrFileName);
       mailSender.send(message);
-      System.out.println(">>> Email sent successfully!");
+      log.info("Email sent successfully!");
       
     } catch (MessagingException e) {
       System.err.println(">>> Failed to send confirmation email (MessagingException): " + e.getMessage());

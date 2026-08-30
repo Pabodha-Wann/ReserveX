@@ -15,6 +15,7 @@ import com.reservex.backend.repositories.ReservationRepository;
 import com.reservex.backend.repositories.StallRepository;
 import com.reservex.backend.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +26,7 @@ import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class StallService {
 
     private final StallRepository stallRepository;
@@ -226,13 +228,13 @@ public class StallService {
 
     @Transactional
     public void unreserveStall(Integer stallId) {
-        System.out.println(">>> Starting unreserveStall for stall ID: " + stallId);
+        log.info("Starting unreserveStall for stall ID: " + stallId);
         
         Stall stall = stallRepository.findById(stallId)
                 .orElseThrow(() -> new IllegalArgumentException("Stall not found: " + stallId));
         String stallName = stall.getName();
         
-        System.out.println(">>> Found stall: " + stallName + ", isConfirmed: " + stall.getIsConfirmed());
+        log.info("Found stall: " + stallName + ", isConfirmed: " + stall.getIsConfirmed());
 
         // Check if stall is actually reserved
         if (stall.getIsConfirmed() == null || !stall.getIsConfirmed()) {
@@ -241,13 +243,13 @@ public class StallService {
 
         // Find all reservations that include this stall
         List<Reservation> reservationsWithStall = reservationRepository.findByStalls_Id(stallId);
-        System.out.println(">>> Found " + reservationsWithStall.size() + " reservations with this stall");
+        log.info("Found " + reservationsWithStall.size() + " reservations with this stall");
 
         if (reservationsWithStall.isEmpty()) {
             // No reservations found, just mark as unreserved
             stall.setIsConfirmed(false);
             stallRepository.save(stall);
-            System.out.println(">>> No reservations found, marked stall as unreserved");
+            log.info("No reservations found, marked stall as unreserved");
             return;
         }
 
@@ -255,29 +257,29 @@ public class StallService {
         for (Reservation reservation : reservationsWithStall) {
             User user = reservation.getUser();
             Integer reservationId = reservation.getId();
-            System.out.println(">>> Processing reservation ID: " + reservationId + " for user: " + user.getEmail());
+            log.info("Processing reservation ID: " + reservationId + " for user: " + user.getEmail());
 
             // Get the current stall count before removal
             int stallCountBeforeDeletion = reservation.getStalls().size();
-            System.out.println(">>> Stall count before deletion: " + stallCountBeforeDeletion);
+            log.info("Stall count before deletion: " + stallCountBeforeDeletion);
 
             // Delete reservation_genres entries for this stall in this reservation
             reservationGenreRepository.deleteByReservationIdAndStallId(reservationId, stallId);
-            System.out.println(">>> Deleted reservation_genres entries");
+            log.info("Deleted reservation_genres entries");
 
             // Remove the stall from the reservation's stall set
             reservation.getStalls().removeIf(s -> s.getId().equals(stallId));
-            System.out.println(">>> Removed stall from reservation's stall set");
+            log.info("Removed stall from reservation's stall set");
 
             // Decrease user's booking count
             int newBookingCount = Math.max(0, user.getNoOfCurrentBookings() - 1);
             user.setNoOfCurrentBookings(newBookingCount);
             userRepository.save(user);
-            System.out.println(">>> Updated user booking count to: " + newBookingCount);
+            log.info("Updated user booking count to: " + newBookingCount);
 
             // Case 1: This was the only stall in the reservation
             if (stallCountBeforeDeletion == 1) {
-                System.out.println(">>> Case 1: Deleting reservation (only stall)");
+                log.info("Case 1: Deleting reservation (only stall)");
                 // Delete the reservation (cascade will handle reservation_stalls)
                 reservationRepository.delete(reservation);
 
@@ -289,7 +291,7 @@ public class StallService {
                         newBookingCount,
                         true  // reservationCancelled = true
                     );
-                    System.out.println(">>> Email sent successfully");
+                    log.info("Email sent successfully");
                 } catch (Exception e) {
                     // Log but don't fail the transaction
                     System.err.println("Failed to send email: " + e.getMessage());
@@ -297,7 +299,7 @@ public class StallService {
             }
             // Case 2: User still has other stalls in the reservation
             else {
-                System.out.println(">>> Case 2: Saving updated reservation (multiple stalls)");
+                log.info("Case 2: Saving updated reservation (multiple stalls)");
                 // Save the updated reservation
                 reservationRepository.save(reservation);
 
@@ -309,7 +311,7 @@ public class StallService {
                         newBookingCount,
                         false  // reservationCancelled = false
                     );
-                    System.out.println(">>> Email sent successfully");
+                    log.info("Email sent successfully");
                 } catch (Exception e) {
                     // Log but don't fail the transaction
                     System.err.println("Failed to send email: " + e.getMessage());
@@ -320,6 +322,6 @@ public class StallService {
         // Mark the stall as unreserved (available)
         stall.setIsConfirmed(false);
         stallRepository.save(stall);
-        System.out.println(">>> Stall marked as unreserved and saved");
+        log.info("Stall marked as unreserved and saved");
     }
 }
