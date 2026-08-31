@@ -34,40 +34,69 @@
 - Node.js 18+ and npm
 - MySQL
 
-### 1) Run Backend
+### 1) Database Setup
+1. Create a MySQL database named `reservex`.
+2. The initial database schema is located in `backend/src/main/resources/schema.sql`. 
+3. Because `spring.jpa.hibernate.ddl-auto=update` is configured, Spring Boot will automatically manage the tables, but you can also run the SQL script manually.
 
-```bash
-cd backend
-mvnw.cmd spring-boot:run
-```
+### 2) Backend Setup
 
-Backend runs on `http://localhost:8080` by default.
+The backend requires a `.env` file for secure credentials (database, email, etc.) and Auth0 for authentication.
 
-### 2) Run Online Portal
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
+2. Create a `.env` file in the `backend/` directory with the following variables:
+   ```env
+   DB_USERNAME=root
+   DB_PASSWORD=your_mysql_password
+   JWT_SECRET=your_jwt_secret_key
+   MAIL_USERNAME=your_email@gmail.com
+   MAIL_PASSWORD=your_app_password
+   SSL_KEYSTORE_PASSWORD=password
+   ```
+3. Run the Spring Boot application:
+   ```bash
+   mvnw.cmd spring-boot:run
+   ```
+   > **Note:** The backend is configured to run securely via HTTPS on port `8443` (i.e., `https://localhost:8443`). 
 
-```bash
-cd online-portal
-npm install
-npm run dev
-```
+### 3) Online Portal (Vendor App)
 
-### 3) Run Admin Portal
+1. Open a new terminal and navigate to the online portal:
+   ```bash
+   cd online-portal
+   npm install
+   ```
+2. Configure Auth0 by creating an `.env.local` file (or updating `vite.config.js` / Auth0Provider settings) with your Auth0 Domain and Client ID.
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+   The Vite server will typically start securely on `https://localhost:5173`.
 
-```bash
-cd admin-portal
-npm install
-npm run dev
-```
+### 4) Admin Portal (Organizer App)
 
-## Environment Notes
+1. Open a third terminal and navigate to the admin portal:
+   ```bash
+   cd admin-portal
+   npm install
+   npm run dev
+   ```
+   If the online portal is already running on port 5173, Vite will automatically assign the Admin portal to `https://localhost:5174`.
 
-- Backend configuration is in `backend/src/main/resources/application.properties`.
-- Online portal API base URL can be configured using:
-  - `VITE_API_BASE_URL` (defaults to `http://localhost:8080/api`)
+## Environment & Security Notes
+
+- **Secrets Management:** Sensitive keys and database passwords have been removed from source code and are injected dynamically via the `.env` file.
+- **HTTPS/SSL:** End-to-End encryption is enforced locally. The backend utilizes a self-signed PKCS12 keystore, and the Vite frontends use the `@vitejs/plugin-basic-ssl` plugin.
+- **OWASP Top 10 Patches:** This repository has been audited and patched for major security vulnerabilities, including IDOR, Injection, Cryptographic Failures, and TOCTOU Race Conditions.
 
 ## API Overview (High-Level)
 
-- Auth: `/api/auth/*`
+Base URL: `https://localhost:8443`
+
+- Auth: handled via Auth0
 - Users: `/api/users/*`
 - Reservations: `/api/reservations/*`
 - Stalls: `/api/stalls/*`
