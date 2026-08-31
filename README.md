@@ -86,6 +86,26 @@ The backend requires a `.env` file for secure credentials (database, email, etc.
    ```
    If the online portal is already running on port 5173, Vite will automatically assign the Admin portal to `https://localhost:5174`.
 
+---
+
+## 🐳 Running with Docker (Production Ready)
+
+If you have Docker installed, you can skip the manual setup entirely and start the full application stack (MySQL Database, Spring Boot Backend, Online Portal, and Admin Portal) with a single command!
+
+1. Ensure your `backend/.env` file is created with all the required secrets (see Backend Setup).
+2. From the root directory of the project, run:
+   ```bash
+   docker-compose up --build -d
+   ```
+   
+**What this does:**
+- `reservex-mysql`: Starts a MySQL 8 container and automatically builds your tables using `schema.sql`.
+- `reservex-backend`: Compiles the Spring Boot `.jar` via Maven, links it to the database container, and serves it on `https://localhost:8443`.
+- `reservex-online-portal`: Compiles the React app into optimized static files and serves them via Nginx on `http://localhost:8081`.
+- `reservex-admin-portal`: Compiles the Admin React app and serves it via Nginx on `http://localhost:8082`.
+
+To stop the containers, run: `docker-compose down`
+
 ## Environment & Security Notes
 
 - **Secrets Management:** Sensitive keys and database passwords have been removed from source code and are injected dynamically via the `.env` file.

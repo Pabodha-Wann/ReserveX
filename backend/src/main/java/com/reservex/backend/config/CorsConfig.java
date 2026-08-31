@@ -27,7 +27,9 @@ public class CorsConfig {
                 "https://localhost:5174",      // Alternative Vite port
                 "https://localhost:3000",      // React default port (my-react-app)
                 "https://localhost:3001",      // Alternative React port
-                "https://localhost:8080"       // Backend testing
+                "https://localhost:8080",      // Backend testing
+                "http://localhost:8081",       // Docker online-portal
+                "http://localhost:8082"        // Docker admin-portal
         ));
         
         // Allow credentials (cookies, authorization headers)

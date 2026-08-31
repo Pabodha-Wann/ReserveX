@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  reservex-mysql:
+    image: mysql:8.0
+    container_name: reservex-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-20031217}
+      MYSQL_DATABASE: reservex
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./backend/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/init.sql
+      - reservex-mysql-data:/var/lib/mysql
+    restart: unless-stopped
+
+  reservex-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: reservex-backend
+    ports:
+      - "8443:8443"
+    env_file:
+      - ./backend/.env
+    environment:
+      # Override the database URL to point to the MySQL container instead of localhost
+      SPRING_DATASOURCE_URL: jdbc:mysql://reservex-mysql:3306/reservex?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    depends_on:
+      - reservex-mysql
+    restart: unless-stopped
+
+  reservex-online-portal:
+    build:
+      context: ./online-portal
+      dockerfile: Dockerfile
+    container_name: reservex-online-portal
+    ports:
+      - "8081:80"
+    restart: unless-stopped
+    depends_on:
+      - reservex-backend
+
+  reservex-admin-portal:
+    build:
+      context: ./admin-portal
+      dockerfile: Dockerfile
+    container_name: reservex-admin-portal
+    ports:
+      - "8082:80"
+    restart: unless-stopped
+    depends_on:
+      - reservex-backend
+
+volumes:
+  reservex-mysql-data:
